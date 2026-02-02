@@ -2,37 +2,51 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
 import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 import { connectDB } from "./lib/db.js";
-
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
-const __dirname = path.resolve();
+const PORT = process.env.PORT || 5001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.NODE_ENV === "production"
+      ? true
+      : "http://localhost:5173",
     credentials: true,
   })
 );
 
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  // Path is now from backend/src/index.js to frontend/dist
+  const frontendPath = path.join(__dirname, "../../frontend/dist");
+  
+  // Serve static files
+  app.use(express.static(frontendPath));
 
-  app.get("/*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  // Express v5 compatible catch-all - use middleware instead of route
+  app.use((req, res, next) => {
+    // Only serve index.html if not an API route
+    if (!req.url.startsWith('/api')) {
+      res.sendFile(path.join(frontendPath, "index.html"));
+    } else {
+      next();
+    }
   });
 }
 
