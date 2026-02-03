@@ -15,25 +15,19 @@ export const useChatStore = create((set, get) => ({
   // GET USERS (SIDEBAR)
   // ========================
   getUsers: async () => {
-    console.log("🔥 getUsers() CALLED");
     set({ isUsersLoading: true });
 
     try {
-      // ⚠️ CHANGED: Check if your backend route is /users or /messages/users
-      // If network tab shows just /users, use this:
       const res = await axiosInstance.get("/messages/users");
-      
-      console.log("✅ Users fetched:", res.data);
+
       set({
         users: res.data,
       });
     } catch (error) {
-      console.error("❌ getUsers error:", error);
       console.error("Error response:", error.response);
       toast.error(error.response?.data?.message || "Failed to load users");
     } finally {
       set({ isUsersLoading: false });
-      console.log("🟢 isUsersLoading set to false");
     }
   },
 
